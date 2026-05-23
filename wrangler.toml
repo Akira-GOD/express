@@ -7,5 +7,5 @@ pages_build_output_dir = "public"
 # 预览命令: wrangler kv:namespace create RETURN_REGISTER --preview
 [[kv_namespaces]]
 binding = "RETURN_REGISTER"
-id = "YOUR_KV_NAMESPACE_ID"
+id = "2b34b9c746094228975a4bc6be378c5d"
 preview_id = "YOUR_KV_PREVIEW_ID"
