@@ -6,9 +6,9 @@
 // ========== 数据库连接 ==========
 define('DB_HOST', 'localhost');
 define('DB_PORT', '3306');
-define('DB_NAME', 'return_register');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_NAME', 'kd');
+define('DB_USER', 'kuaidi');
+define('DB_PASS', 'aaaa14977');
 define('DB_CHARSET', 'utf8mb4');
 
 /**
