@@ -24,3 +24,10 @@ error_log
 # 备份
 *.sql.gz
 *.bak
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
