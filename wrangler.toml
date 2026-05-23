@@ -1,0 +1,11 @@
+name = "return-register-system"
+compatibility_date = "2024-12-01"
+pages_build_output_dir = "public"
+
+# KV 命名空间绑定（部署前需要创建 KV 并替换 ID）
+# 创建命令: wrangler kv:namespace create RETURN_REGISTER
+# 预览命令: wrangler kv:namespace create RETURN_REGISTER --preview
+[[kv_namespaces]]
+binding = "RETURN_REGISTER"
+id = "YOUR_KV_NAMESPACE_ID"
+preview_id = "YOUR_KV_PREVIEW_ID"

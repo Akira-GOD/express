@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>退货登记管理系统</title>
+    <style>
+        :root {
+            --primary: #4f6ef7;
+            --primary-hover: #3b5de7;
+            --success: #22c55e;
+            --success-hover: #16a34a;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --warning: #f59e0b;
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1),0 4px 10px rgba(0,0,0,0.06);
+            --radius: 10px;
+            --radius-sm: 6px;
+            --transition: 0.2s ease;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6;
+        }
+
+        /* ============ Auth Page ============ */
+        .auth-container {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .auth-card {
+            background: var(--card-bg); border-radius: 16px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2); width: 100%; max-width: 420px;
+            overflow: hidden; animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { opacity:0; transform:translateY(20px) scale(0.97); }
+            to { opacity:1; transform:translateY(0) scale(1); }
+        }
+        @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+        .auth-header {
+            background: linear-gradient(135deg, #4f6ef7 0%, #6366f1 100%);
+            color: white; padding: 28px 32px; text-align: center;
+        }
+        .auth-header .auth-icon { font-size: 2.8rem; margin-bottom: 8px; }
+        .auth-header h1 { font-size: 1.4rem; font-weight: 700; }
+        .auth-header p { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
+        .auth-body { padding: 28px 32px 8px; }
+        .auth-tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 2px solid var(--border); }
+        .auth-tab {
+            flex: 1; padding: 10px; border: none; background: none;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer;
+            color: var(--text-secondary); transition: all var(--transition);
+            position: relative; bottom: -2px; border-bottom: 2px solid transparent;
+        }
+        .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .auth-form { display: none; }
+        .auth-form.active { display: block; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.85rem; }
+        .form-group label .required { color: var(--danger); }
+        .form-group input {
+            width: 100%; padding: 11px 14px; border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm); font-size: 0.9rem; font-family: inherit;
+            outline: none; transition: all var(--transition);
+            background: var(--card-bg); color: var(--text);
+        }
+        .form-group input:focus { border-color: var(--primary); box-shadow:0 0 0 3px rgba(79,110,247,0.08); }
+        .auth-error { background: #fef2f2; color: #dc2626; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 0.85rem; margin-bottom: 16px; display: none; }
+        .auth-error.show { display: block; }
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 11px 20px; border: none; border-radius: var(--radius-sm);
+            font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            transition: all var(--transition); white-space: nowrap;
+        }
+        .btn-full { width: 100%; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,110,247,0.35); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: var(--success-hover); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: var(--danger-hover); }
+        .btn-outline { background: var(--card-bg); color: var(--text); border: 1.5px solid var(--border); }
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); background: #f8faff; }
+        .btn-xs { padding: 3px 10px; font-size: 0.75rem; border-radius: 4px; }
+        .btn-sm { padding: 6px 14px; font-size: 0.82rem; }
+        .auth-footer { padding: 4px 32px 24px; text-align: center; font-size: 0.8rem; color: var(--text-secondary); }
+
+        /* ============ App Container ============ */
+        .app-container { display: none; }
+        .app-container.active { display: block; }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #4f6ef7 0%, #6366f1 100%);
+            color: white; padding: 0; box-shadow: var(--shadow-lg);
+            position: sticky; top:0; z-index:100;
+        }
+        .header-inner {
+            max-width: 1300px; margin:0 auto; padding: 16px 24px;
+            display:flex; align-items:center; justify-content:space-between;
+            flex-wrap:wrap; gap:14px;
+        }
+        .header h1 { font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:8px; white-space:nowrap; }
+        .header h1 .icon { font-size:1.7rem; }
+        .header-user {
+            display:flex; align-items:center; gap:12px;
+            background:rgba(255,255,255,0.18); padding:6px 10px 6px 16px;
+            border-radius:24px; backdrop-filter:blur(4px);
+        }
+        .header-user .user-name { font-weight:600; font-size:0.9rem; }
+        .header-user .btn-logout {
+            padding:6px 14px; border-radius:20px; border:none;
+            background:rgba(255,255,255,0.25); color:white;
+            font-size:0.8rem; font-weight:600; cursor:pointer;
+            transition:all var(--transition); white-space:nowrap;
+        }
+        .header-user .btn-logout:hover { background:rgba(255,255,255,0.4); }
+        .header-stats { display:flex; gap:14px; flex-wrap:wrap; }
+        .stat-item {
+            background:rgba(255,255,255,0.18); border-radius:var(--radius-sm);
+            padding:6px 14px; text-align:center; backdrop-filter:blur(4px);
+        }
+        .stat-item .stat-num { font-size:1.3rem; font-weight:700; }
+        .stat-item .stat-label { font-size:0.7rem; opacity:0.85; }
+
+        /* Main */
+        .main { max-width:1300px; margin:0 auto; padding:24px; }
+
+        /* ==== Inline Add Form ==== */
+        .add-form-card {
+            background: var(--card-bg); border-radius: var(--radius);
+            box-shadow: var(--shadow); margin-bottom: 20px;
+            border-left: 4px solid var(--primary); overflow: hidden;
+        }
+        .add-form-header {
+            padding: 14px 20px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; user-select: none; transition: background var(--transition);
+        }
+        .add-form-header:hover { background: #fafbff; }
+        .add-form-header h3 { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .add-form-header .toggle-icon { font-size: 1.2rem; transition: transform var(--transition); }
+        .add-form-header.expanded .toggle-icon { transform: rotate(180deg); }
+        .add-form-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease, padding 0.35s ease; }
+        .add-form-body.open { max-height: 500px; }
+        .add-form-body-inner { padding: 20px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+        @media(max-width:900px) { .form-row { grid-template-columns: 1fr 1fr; } }
+        @media(max-width:500px) { .form-row { grid-template-columns: 1fr; } }
+        .form-group select,
+        .form-group textarea {
+            width:100%; padding:10px 12px; border:1.5px solid var(--border);
+            border-radius:var(--radius-sm); font-size:0.9rem; font-family:inherit;
+            outline:none; transition:all var(--transition); background:var(--card-bg); color:var(--text);
+        }
+        .form-group select {
+            appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 12px center;
+        }
+        .form-group textarea { resize:vertical; min-height:65px; }
+        .form-group select:focus,
+        .form-group textarea:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,110,247,0.08); }
+
+        /* History Reasons */
+        .history-reasons {
+            display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+        }
+        .history-reason-tag {
+            display: inline-block; padding: 4px 12px; border-radius: 16px;
+            font-size: 0.78rem; cursor: pointer; border: 1px solid var(--border);
+            background: #f8fafc; color: var(--text-secondary);
+            transition: all var(--transition); white-space: nowrap;
+        }
+        .history-reason-tag:hover {
+            border-color: var(--primary); color: var(--primary);
+            background: #f0f4ff;
+        }
+        .history-reason-tag .del-reason {
+            margin-left: 4px; color: #94a3b8; font-weight: bold; cursor: pointer;
+            font-size: 0.85rem; line-height: 1;
+        }
+        .history-reason-tag .del-reason:hover { color: var(--danger); }
+        .history-label {
+            font-size: 0.75rem; color: var(--text-secondary);
+            font-weight: 600; display: flex; align-items: center; gap: 4px;
+        }
+
+        /* Toolbar */
+        .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+        .search-box {
+            display:flex; align-items:center; background:var(--card-bg);
+            border:1.5px solid var(--border); border-radius:var(--radius-sm);
+            overflow:hidden; transition:all var(--transition); flex:1;
+            min-width:160px; max-width:340px;
+        }
+        .search-box:focus-within { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,110,247,0.1); }
+        .search-box input {
+            flex:1; border:none; padding:9px 12px; font-size:0.9rem;
+            outline:none; background:transparent; color:var(--text); min-width:0;
+        }
+        .search-box .search-icon { padding:0 8px 0 12px; color:#94a3b8; font-size:0.95rem; }
+        .search-box .search-clear {
+            padding:9px 10px; cursor:pointer; color:#94a3b8;
+            background:none; border:none; font-size:1rem; display:none;
+            transition:color var(--transition);
+        }
+        .search-box .search-clear:hover { color:var(--danger); }
+        .filter-select {
+            padding:9px 32px 9px 12px; border:1.5px solid var(--border);
+            border-radius:var(--radius-sm); font-size:0.9rem; background:var(--card-bg);
+            color:var(--text); cursor:pointer; outline:none; appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 10px center;
+            transition:all var(--transition); min-width:120px;
+        }
+        .filter-select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,110,247,0.1); }
+        .date-filter {
+            display: flex; align-items: center; gap: 4px;
+        }
+        .date-filter input[type="date"] {
+            padding: 8px 10px; border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm); font-size: 0.85rem;
+            font-family: inherit; outline: none; background: var(--card-bg);
+            color: var(--text); transition: all var(--transition); width: 130px;
+        }
+        .date-filter input[type="date"]:focus {
+            border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,110,247,0.08);
+        }
+        .date-filter .date-sep { color: var(--text-secondary); font-size: 0.85rem; padding: 0 2px; }
+        .toolbar-spacer { flex:1; min-width:0; }
+
+        /* Card */
+        .card { background:var(--card-bg); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+        .card-header {
+            padding:14px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+            flex-wrap:wrap; gap:10px;
+        }
+        .card-header h2 { font-size:1.05rem; font-weight:700; }
+        .result-hint { font-size:0.82rem; color:var(--text-secondary); }
+        .result-hint strong { color:var(--primary); }
+        .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+        table { width:100%; border-collapse:collapse; min-width:880px; }
+        thead { background:#f8fafc; }
+        thead th {
+            padding:12px 14px; text-align:left; font-size:0.78rem; font-weight:700;
+            text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary);
+            border-bottom:2px solid var(--border); white-space:nowrap;
+        }
+        tbody td { padding:12px 14px; border-bottom:1px solid #f1f5f9; font-size:0.88rem; vertical-align:middle; }
+        tbody tr { transition:background var(--transition); }
+        tbody tr:hover { background:#f8faff; }
+        tbody tr:last-child td { border-bottom:none; }
+        .courier-badge {
+            display:inline-block; padding:3px 10px; border-radius:20px;
+            font-size:0.78rem; font-weight:600; letter-spacing:0.2px;
+        }
+        .courier-shunfeng { background:#fef2f2; color:#dc2626; }
+        .courier-yuantong { background:#fefce8; color:#ca8a04; }
+        .courier-zhongtong { background:#ecfdf5; color:#059669; }
+        .courier-yunda { background:#fff7ed; color:#ea580c; }
+        .courier-shentong { background:#eff6ff; color:#2563eb; }
+        .courier-jd { background:#fdf4ff; color:#a21caf; }
+        .courier-yz { background:#f0fdf4; color:#15803d; }
+        .courier-jitu { background:#fef9c3; color:#a16207; }
+        .courier-other { background:#f8fafc; color:#475569; }
+        .tracking-no {
+            font-family:'SF Mono','Consolas','Monaco',monospace;
+            font-weight:600; letter-spacing:0.5px; color:var(--primary);
+            cursor:pointer; transition:all var(--transition);
+        }
+        .tracking-no:hover { text-decoration:underline; color:var(--primary-hover); }
+        .actions { display:flex; gap:5px; }
+
+        /* Modal */
+        .modal-overlay {
+            position:fixed; inset:0; background:rgba(15,23,42,0.55);
+            backdrop-filter:blur(4px); z-index:1000; display:flex;
+            align-items:center; justify-content:center; animation:fadeIn 0.2s ease;
+        }
+        .modal {
+            background:var(--card-bg); border-radius:14px;
+            box-shadow:0 25px 50px rgba(0,0,0,0.2);
+            width:90%; max-width:500px; max-height:85vh; overflow-y:auto;
+            animation:slideUp 0.25s ease;
+        }
+        .modal-header {
+            padding:18px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .modal-header h3 { font-size:1.1rem; font-weight:700; }
+        .modal-close {
+            width:32px; height:32px; border-radius:50%; border:none;
+            background:#f1f5f9; color:var(--text-secondary); cursor:pointer;
+            font-size:1.1rem; display:flex; align-items:center; justify-content:center;
+            transition:all var(--transition); flex-shrink:0;
+        }
+        .modal-close:hover { background:#fee2e2; color:#ef4444; }
+        .modal-body { padding:24px; }
+        .modal-footer {
+            padding:14px 24px; border-top:1px solid var(--border);
+            display:flex; justify-content:flex-end; gap:8px;
+        }
+        .form-group input[type="date"] {
+            width:100%; padding:10px 12px; border:1.5px solid var(--border);
+            border-radius:var(--radius-sm); font-size:0.9rem; font-family:inherit;
+            outline:none; transition:all var(--transition); background:var(--card-bg); color:var(--text);
+        }
+        .form-group input[type="date"]:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,110,247,0.08); }
+
+        /* Empty */
+        .empty-state { text-align:center; padding:55px 20px; color:var(--text-secondary); }
+        .empty-state .empty-icon { font-size:3.2rem; margin-bottom:14px; opacity:0.6; }
+        .empty-state p { font-size:0.95rem; margin-bottom:4px; }
+        .empty-state .sub { font-size:0.82rem; opacity:0.7; }
+
+        /* Confirm Dialog */
+        .confirm-dialog .modal { max-width:380px; text-align:center; }
+        .confirm-dialog .modal-body { padding:30px 24px 16px; }
+        .confirm-dialog .confirm-icon { font-size:2.8rem; margin-bottom:10px; }
+        .confirm-dialog .confirm-msg { font-size:1rem; font-weight:600; margin-bottom:4px; }
+        .confirm-dialog .confirm-sub { font-size:0.82rem; color:var(--text-secondary); }
+
+        /* Toast */
+        .toast {
+            position:fixed; top:20px; left:50%; transform:translateX(-50%);
+            background:#1e293b; color:white; padding:10px 24px; border-radius:20px;
+            font-size:0.85rem; font-weight:600; z-index:9999;
+            opacity:0; transition:opacity 0.3s ease; pointer-events:none;
+        }
+        .toast.show { opacity:1; }
+
+        /* Pagination */
+        .pagination-wrapper {
+            padding:14px 24px; border-top:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+            flex-wrap:wrap; gap:10px;
+        }
+        .page-info { font-size:0.82rem; color:var(--text-secondary); }
+        .pagination { display:flex; gap:3px; }
+        .pagination button {
+            width:32px; height:32px; border:1px solid var(--border);
+            border-radius:var(--radius-sm); background:var(--card-bg); cursor:pointer;
+            font-size:0.82rem; font-weight:500; transition:all var(--transition); color:var(--text);
+        }
+        .pagination button:hover:not(:disabled) { border-color:var(--primary); color:var(--primary); background:#f8faff; }
+        .pagination button.active { background:var(--primary); color:white; border-color:var(--primary); font-weight:700; }
+        .pagination button:disabled { opacity:0.4; cursor:not-allowed; }
+
+        /* Loading */
+        .loading-overlay {
+            position:fixed; inset:0; background:rgba(255,255,255,0.7);
+            z-index:9998; display:none; align-items:center; justify-content:center;
+        }
+        .loading-overlay.show { display:flex; }
+        .spinner {
+            width:40px; height:40px; border:3px solid var(--border);
+            border-top-color:var(--primary); border-radius:50%;
+            animation:spin 0.7s linear infinite;
+        }
+        @keyframes spin { to{transform:rotate(360deg);} }
+
+        /* Responsive */
+        @media(max-width:768px) {
+            .header-inner { padding:12px 16px; }
+            .header h1 { font-size:1.2rem; }
+            .header-stats { width:100%; justify-content: space-between; }
+            .main { padding:14px; }
+            .toolbar { flex-direction:column; }
+            .search-box { max-width:100%; }
+            .filter-select, .date-filter { width:100%; }
+            .date-filter input[type="date"] { flex:1; width:auto; }
+            .btn { width:100%; justify-content:center; }
+            table { min-width:700px; }
+            thead th, tbody td { padding:9px 8px; font-size:0.78rem; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ============ Auth Page ============ -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-icon">📦</div>
+                <h1>退货登记管理系统</h1>
+                <p>请登录或注册账号</p>
+            </div>
+            <div class="auth-body">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="switchAuthTab('login')">登录</button>
+                    <button class="auth-tab" onclick="switchAuthTab('register')">注册</button>
+                </div>
+                <div class="auth-error" id="authError"></div>
+                <form class="auth-form active" id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" id="loginUsername" placeholder="请输入用户名" maxlength="30" autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password" id="loginPassword" placeholder="请输入密码" maxlength="50" autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">🔑 登录</button>
+                </form>
+                <form class="auth-form" id="registerForm" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label><span class="required">*</span> 用户名</label>
+                        <input type="text" id="regUsername" placeholder="至少3个字符" maxlength="30" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label><span class="required">*</span> 密码</label>
+                        <input type="password" id="regPassword" placeholder="至少4个字符" maxlength="50" autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label><span class="required">*</span> 确认密码</label>
+                        <input type="password" id="regPasswordConfirm" placeholder="再次输入密码" maxlength="50" autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">📝 注册</button>
+                </form>
+            </div>
+            <div class="auth-footer">
+                🔒 密码 SHA-256 加盐加密 · API 开放对接 · 每位用户数据独立隔离
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ App Page ============ -->
+    <div class="app-container" id="appContainer">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-inner">
+                <h1><span class="icon">📦</span>退货登记管理</h1>
+                <div class="header-stats">
+                    <div class="stat-item">
+                        <div class="stat-num" id="statTotal">0</div>
+                        <div class="stat-label">总记录</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num" id="statToday">0</div>
+                        <div class="stat-label">今日新增</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num" id="statCouriers">0</div>
+                        <div class="stat-label">快递公司</div>
+                    </div>
+                </div>
+                <div class="header-user">
+                    <span class="user-name">👤 <span id="displayUsername"></span></span>
+                    <button class="btn-logout" onclick="handleLogout()">退出登录</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main -->
+        <div class="main">
+            <!-- ==== Inline Quick Add Form ==== -->
+            <div class="add-form-card" id="addFormCard">
+                <div class="add-form-header" id="addFormHeader" onclick="toggleAddForm()">
+                    <h3>📝 快速登记退货</h3>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="add-form-body open" id="addFormBody">
+                    <div class="add-form-body-inner">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><span class="required">*</span> 快递单号</label>
+                                <input type="text" id="trackingNo" placeholder="请输入快递单号" maxlength="50" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label><span class="required">*</span> 快递公司</label>
+                                <select id="courier">
+                                    <option value="">请选择快递公司</option>
+                                    <option value="顺丰">顺丰速运</option>
+                                    <option value="圆通">圆通快递</option>
+                                    <option value="中通">中通快递</option>
+                                    <option value="韵达">韵达快递</option>
+                                    <option value="申通">申通快递</option>
+                                    <option value="京东">京东物流</option>
+                                    <option value="邮政">中国邮政</option>
+                                    <option value="极兔">极兔快递</option>
+                                    <option value="其他">其他快递</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label><span class="required">*</span> 登记日期</label>
+                                <input type="date" id="date">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:6px;">
+                            <div class="form-group">
+                                <label>客户名称</label>
+                                <input type="text" id="customerName" placeholder="客户名称（选填）" maxlength="30">
+                            </div>
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label>退货原因</label>
+                                <div style="display:flex; gap:8px; align-items:flex-start;">
+                                    <textarea id="reason" placeholder="退货原因（选填，支持快速选择历史原因）" maxlength="200" style="flex:1;"></textarea>
+                                </div>
+                                <div class="history-label" style="margin-top:6px;">💡 点击快速填充历史原因：</div>
+                                <div class="history-reasons" id="historyReasons"></div>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px; margin-top:16px;">
+                            <button class="btn btn-primary" onclick="saveRecord()">💾 提交登记</button>
+                            <button class="btn btn-outline" onclick="clearAddForm()">🔄 清空表单</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="搜索快递单号 / 客户名称..." oninput="renderTable()">
+                    <button class="search-clear" id="searchClear" onclick="clearSearch()" title="清除搜索">✕</button>
+                </div>
+                <select class="filter-select" id="courierFilter" onchange="renderTable()">
+                    <option value="all">📋 全部快递公司</option>
+                    <option value="顺丰">顺丰速运</option>
+                    <option value="圆通">圆通快递</option>
+                    <option value="中通">中通快递</option>
+                    <option value="韵达">韵达快递</option>
+                    <option value="申通">申通快递</option>
+                    <option value="京东">京东物流</option>
+                    <option value="邮政">中国邮政</option>
+                    <option value="极兔">极兔快递</option>
+                    <option value="其他">其他快递</option>
+                </select>
+                <div class="date-filter">
+                    <input type="date" id="dateFilterFrom" onchange="renderTable()" title="起始日期">
+                    <span class="date-sep">至</span>
+                    <input type="date" id="dateFilterTo" onchange="renderTable()" title="结束日期">
+                </div>
+                <div class="toolbar-spacer"></div>
+                <button class="btn btn-outline btn-sm" onclick="exportData()">📥 导出CSV</button>
+            </div>
+
+            <!-- Table Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📋 退货记录</h2>
+                    <span class="result-hint" id="resultHint"></span>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:44px;">#</th>
+                                <th style="width:160px;">快递单号</th>
+                                <th style="width:95px;">快递公司</th>
+                                <th style="width:95px;">客户名称</th>
+                                <th>退货原因</th>
+                                <th style="width:105px;">登记日期</th>
+                                <th style="width:105px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+                <div class="pagination-wrapper">
+                    <span class="page-info" id="pageInfo"></span>
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="formModal" style="display:none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">编辑退货记录</h3>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label><span class="required">*</span> 快递单号</label>
+                    <input type="text" id="editTrackingNo" placeholder="请输入快递单号" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label><span class="required">*</span> 快递公司</label>
+                    <select id="editCourier">
+                        <option value="">请选择快递公司</option>
+                        <option value="顺丰">顺丰速运</option>
+                        <option value="圆通">圆通快递</option>
+                        <option value="中通">中通快递</option>
+                        <option value="韵达">韵达快递</option>
+                        <option value="申通">申通快递</option>
+                        <option value="京东">京东物流</option>
+                        <option value="邮政">中国邮政</option>
+                        <option value="极兔">极兔快递</option>
+                        <option value="其他">其他快递</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>客户名称</label>
+                        <input type="text" id="editCustomerName" placeholder="客户名称（选填）" maxlength="30">
+                    </div>
+                    <div class="form-group">
+                        <label>登记日期</label>
+                        <input type="date" id="editDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>退货原因</label>
+                    <textarea id="editReason" placeholder="退货原因（选填）" maxlength="200"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary btn-sm" onclick="executeEditRecord()">💾 更新</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Dialog -->
+    <div class="modal-overlay confirm-dialog" id="confirmDialog" style="display:none;">
+        <div class="modal">
+            <div class="modal-body">
+                <div class="confirm-icon">⚠️</div>
+                <div class="confirm-msg" id="confirmMsg">确定要删除这条记录吗？</div>
+                <div class="confirm-sub" id="confirmSub">此操作不可恢复</div>
+            </div>
+            <div class="modal-footer" style="justify-content:center;">
+                <button class="btn btn-outline btn-sm" onclick="closeConfirm()">取消</button>
+                <button class="btn btn-danger btn-sm" id="confirmDeleteBtn">🗑 确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ Globals ============
+        let records = [];
+        let currentPage = 1;
+        const PAGE_SIZE = 12;
+        let pendingDeleteId = null;
+        let currentUsername = '';
+        let historyReasons = [];
+        const HISTORY_STORAGE_KEY = 'return_history_reasons';
+
+        const courierClassMap = {
+            '顺丰':'shunfeng','圆通':'yuantong','中通':'zhongtong',
+            '韵达':'yunda','申通':'shentong','京东':'jd',
+            '邮政':'yz','极兔':'jitu','其他':'other',
+        };
+
+        // ============ API 请求 ============
+        async function api(url, options = {}) {
+            try {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {}),
+                };
+                const res = await fetch(url, {
+                    headers,
+                    credentials: 'same-origin',
+                    ...options,
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        showAuthPage();
+                        throw new Error('请先登录');
+                    }
+                    throw new Error(data.error || '请求失败');
+                }
+                return data;
+            } catch (err) {
+                if (err.message !== '请先登录') {
+                    showToast('⚠️ ' + err.message);
+                }
+                throw err;
+            }
+        }
+
+        function showLoading() { document.getElementById('loadingOverlay').classList.add('show'); }
+        function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+
+        // ============ Toast ============
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // ============ History Reasons ============
+        function loadHistoryReasons() {
+            try {
+                const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+                historyReasons = raw ? JSON.parse(raw) : [];
+            } catch {
+                historyReasons = [];
+            }
+        }
+
+        function saveHistoryReasons() {
+            localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyReasons));
+        }
+
+        function addHistoryReason(reason) {
+            if (!reason || reason.trim() === '') return;
+            reason = reason.trim();
+            // 去重
+            historyReasons = historyReasons.filter(r => r !== reason);
+            historyReasons.unshift(reason);
+            // 最多保留 20 条
+            if (historyReasons.length > 20) historyReasons = historyReasons.slice(0, 20);
+            saveHistoryReasons();
+            renderHistoryReasons();
+        }
+
+        function removeHistoryReason(index) {
+            historyReasons.splice(index, 1);
+            saveHistoryReasons();
+            renderHistoryReasons();
+        }
+
+        function renderHistoryReasons() {
+            const container = document.getElementById('historyReasons');
+            if (historyReasons.length === 0) {
+                container.innerHTML = '<span style="font-size:0.75rem;color:#94a3b8;">暂无历史原因，提交记录后自动保存</span>';
+                return;
+            }
+            container.innerHTML = historyReasons.map((r, i) => `
+                <span class="history-reason-tag" onclick="document.getElementById('reason').value='${escapeHtml(r)}'">
+                    ${escapeHtml(r)}
+                    <span class="del-reason" onclick="event.stopPropagation();removeHistoryReason(${i})" title="删除此历史">×</span>
+                </span>
+            `).join('');
+        }
+
+        // ============ Auth ============
+        function switchAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            if (tab === 'login') {
+                document.querySelector('.auth-tab:nth-child(1)').classList.add('active');
+                document.getElementById('loginForm').classList.add('active');
+            } else {
+                document.querySelector('.auth-tab:nth-child(2)').classList.add('active');
+                document.getElementById('registerForm').classList.add('active');
+            }
+            hideAuthError();
+        }
+        function showAuthError(msg) {
+            const el = document.getElementById('authError');
+            el.textContent = msg;
+            el.classList.add('show');
+        }
+        function hideAuthError() {
+            document.getElementById('authError').classList.remove('show');
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            hideAuthError();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            if (!username || !password) {
+                showAuthError('请输入用户名和密码');
+                return;
+            }
+            showLoading();
+            try {
+                const data = await api('/api/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password }),
+                });
+                currentUsername = data.username;
+                showToast('✅ 登录成功');
+                await loadAndShowApp();
+            } catch {} finally { hideLoading(); }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            hideAuthError();
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirm = document.getElementById('regPasswordConfirm').value;
+            if (!username || !password) {
+                showAuthError('请填写所有字段');
+                return;
+            }
+            if (password !== confirm) {
+                showAuthError('两次输入的密码不一致');
+                return;
+            }
+            showLoading();
+            try {
+                const data = await api('/api/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password }),
+                });
+                showToast('✅ ' + data.message);
+                switchAuthTab('login');
+                document.getElementById('loginUsername').value = username;
+                document.getElementById('loginPassword').value = '';
+            } catch {} finally { hideLoading(); }
+        }
+
+        async function handleLogout() {
+            try { await api('/api/logout', { method: 'POST' }); } catch {}
+            showAuthPage();
+        }
+
+        function showAuthPage() {
+            document.getElementById('authContainer').style.display = 'flex';
+            document.getElementById('appContainer').classList.remove('active');
+            currentUsername = '';
+            records = [];
+            document.getElementById('loginPassword').value = '';
+        }
+
+        async function loadAndShowApp() {
+            try {
+                const user = await api('/api/user');
+                currentUsername = user.username;
+            } catch {
+                showAuthPage();
+                return;
+            }
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('appContainer').classList.add('active');
+            document.getElementById('displayUsername').textContent = currentUsername;
+            document.getElementById('date').value = new Date().toISOString().slice(0, 10);
+            loadHistoryReasons();
+            renderHistoryReasons();
+            await loadRecords();
+            renderTable();
+        }
+
+        // ============ Toggle Add Form ============
+        function toggleAddForm() {
+            const body = document.getElementById('addFormBody');
+            const header = document.getElementById('addFormHeader');
+            body.classList.toggle('open');
+            header.classList.toggle('expanded');
+        }
+
+        function clearAddForm() {
+            document.getElementById('trackingNo').value = '';
+            document.getElementById('courier').value = '';
+            document.getElementById('customerName').value = '';
+            document.getElementById('reason').value = '';
+            document.getElementById('date').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('trackingNo').focus();
+        }
+
+        // ============ Records CRUD ============
+        async function loadRecords() {
+            try {
+                records = await api('/api/records');
+            } catch {
+                records = [];
+            }
+        }
+
+        function getFilteredRecords() {
+            const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+            const courierFilter = document.getElementById('courierFilter').value;
+            const dateFrom = document.getElementById('dateFilterFrom').value;
+            const dateTo = document.getElementById('dateFilterTo').value;
+
+            let filtered = [...records];
+
+            // 快递公司筛选
+            if (courierFilter !== 'all') {
+                filtered = filtered.filter(r => r.courier === courierFilter);
+            }
+            // 日期范围筛选
+            if (dateFrom) {
+                filtered = filtered.filter(r => r.date >= dateFrom);
+            }
+            if (dateTo) {
+                filtered = filtered.filter(r => r.date <= dateTo);
+            }
+            // 搜索
+            if (searchTerm) {
+                filtered = filtered.filter(r =>
+                    r.trackingNo.toLowerCase().includes(searchTerm) ||
+                    (r.customerName || '').toLowerCase().includes(searchTerm)
+                );
+            }
+            // 排序
+            filtered.sort((a, b) => {
+                if (a.date !== b.date) return b.date.localeCompare(a.date);
+                return b.createdAt.localeCompare(a.createdAt);
+            });
+            return filtered;
+        }
+
+        function renderTable() {
+            const filtered = getFilteredRecords();
+            const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const pageData = filtered.slice(start, start + PAGE_SIZE);
+
+            const searchInput = document.getElementById('searchInput');
+            document.getElementById('searchClear').style.display = searchInput.value ? 'block' : 'none';
+
+            const courierFilter = document.getElementById('courierFilter').value;
+            const dateFrom = document.getElementById('dateFilterFrom').value;
+            const dateTo = document.getElementById('dateFilterTo').value;
+
+            let hintParts = [`共 <strong>${filtered.length}</strong> 条记录`];
+            if (courierFilter !== 'all') hintParts.push(courierFilter);
+            if (dateFrom) hintParts.push(`从 ${dateFrom}`);
+            if (dateTo) hintParts.push(`至 ${dateTo}`);
+            if (searchInput.value.trim()) hintParts.push(`搜索："${searchInput.value.trim()}"`);
+            document.getElementById('resultHint').innerHTML = hintParts.join(' · ');
+
+            const tbody = document.getElementById('tableBody');
+            if (pageData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7">
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p>暂无退货记录</p>
+                        <p class="sub">在上方表单中填写信息后点击提交登记</p>
+                    </div>
+                </td></tr>`;
+            } else {
+                tbody.innerHTML = pageData.map((r, i) => `
+                    <tr>
+                        <td>${start + i + 1}</td>
+                        <td>
+                            <span class="tracking-no" onclick="copyTracking('${escapeHtml(r.trackingNo)}')" title="点击复制单号">
+                                📋 ${escapeHtml(r.trackingNo)}
+                            </span>
+                        </td>
+                        <td><span class="courier-badge courier-${courierClassMap[r.courier] || 'other'}">${escapeHtml(r.courier)}</span></td>
+                        <td>${escapeHtml(r.customerName || '-')}</td>
+                        <td>${escapeHtml(r.reason || '-')}</td>
+                        <td>${r.date}</td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn btn-outline btn-xs" onclick="openEditModal('${r.id}')" title="编辑">✏️</button>
+                                <button class="btn btn-danger btn-xs" onclick="confirmDelete('${r.id}')" title="删除">🗑</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            renderPagination(totalPages, filtered.length);
+            updateStats(filtered);
+        }
+
+        function renderPagination(totalPages, totalFiltered) {
+            const pageInfo = document.getElementById('pageInfo');
+            const pagination = document.getElementById('pagination');
+            if (totalFiltered === 0) { pageInfo.textContent=''; pagination.innerHTML=''; return; }
+            pageInfo.textContent = `第 ${currentPage} / ${totalPages} 页，共 ${totalFiltered} 条`;
+            let html = `<button ${currentPage===1?'disabled':''} onclick="goToPage(${currentPage-1})">◀</button>`;
+            const maxShow = 5;
+            let sp = Math.max(1, currentPage - Math.floor(maxShow/2));
+            let ep = Math.min(totalPages, sp + maxShow - 1);
+            if (ep - sp + 1 < maxShow) sp = Math.max(1, ep - maxShow + 1);
+            if (sp > 1) {
+                html += `<button onclick="goToPage(1)">1</button>`;
+                if (sp > 2) html += `<button disabled>...</button>`;
+            }
+            for (let p = sp; p <= ep; p++) {
+                html += `<button class="${p===currentPage?'active':''}" onclick="goToPage(${p})">${p}</button>`;
+            }
+            if (ep < totalPages) {
+                if (ep < totalPages - 1) html += `<button disabled>...</button>`;
+                html += `<button onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+            html += `<button ${currentPage===totalPages?'disabled':''} onclick="goToPage(${currentPage+1})">▶</button>`;
+            pagination.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            const filtered = getFilteredRecords();
+            const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderTable();
+            document.querySelector('.card').scrollIntoView({ behavior:'smooth', block:'start' });
+        }
+
+        function updateStats(filtered) {
+            document.getElementById('statTotal').textContent = records.length;
+            const today = new Date().toISOString().slice(0,10);
+            document.getElementById('statToday').textContent = records.filter(r => r.date === today).length;
+            document.getElementById('statCouriers').textContent = new Set(records.map(r => r.courier)).size;
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function copyTracking(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('✅ 快递单号已复制：' + text);
+            }).catch(() => {
+                showToast('⚠️ 复制失败，请手动选择');
+            });
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            currentPage = 1;
+            renderTable();
+        }
+
+        // ============ Inline Save ============
+        async function saveRecord() {
+            const trackingNo = document.getElementById('trackingNo').value.trim();
+            const courier = document.getElementById('courier').value;
+            const customerName = document.getElementById('customerName').value.trim();
+            const reason = document.getElementById('reason').value.trim();
+            const date = document.getElementById('date').value;
+
+            if (!trackingNo) { showToast('⚠️ 请输入快递单号'); document.getElementById('trackingNo').focus(); return; }
+            if (!courier) { showToast('⚠️ 请选择快递公司'); document.getElementById('courier').focus(); return; }
+            if (!date) { showToast('⚠️ 请选择登记日期'); return; }
+
+            const body = { trackingNo, courier, customerName, reason, date };
+            showLoading();
+            try {
+                await api('/api/records', {
+                    method: 'POST',
+                    body: JSON.stringify(body),
+                });
+                showToast('✅ 退货登记成功');
+                // 保存历史原因
+                if (reason) addHistoryReason(reason);
+                clearAddForm();
+                await loadRecords();
+                currentPage = 1;
+                renderTable();
+            } catch {} finally { hideLoading(); }
+        }
+
+        // ============ Edit Modal ============
+        function openEditModal(id) {
+            const record = records.find(r => r.id === id);
+            if (!record) return;
+            document.getElementById('editId').value = record.id;
+            document.getElementById('editTrackingNo').value = record.trackingNo;
+            document.getElementById('editCourier').value = record.courier;
+            document.getElementById('editCustomerName').value = record.customerName || '';
+            document.getElementById('editReason').value = record.reason || '';
+            document.getElementById('editDate').value = record.date;
+            document.getElementById('formModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('editTrackingNo').focus(), 100);
+        }
+
+        function closeModal() {
+            document.getElementById('formModal').style.display = 'none';
+            document.getElementById('editId').value = '';
+        }
+
+        async function executeEditRecord() {
+            const editId = document.getElementById('editId').value;
+            const trackingNo = document.getElementById('editTrackingNo').value.trim();
+            const courier = document.getElementById('editCourier').value;
+            const customerName = document.getElementById('editCustomerName').value.trim();
+            const reason = document.getElementById('editReason').value.trim();
+            const date = document.getElementById('editDate').value;
+
+            if (!trackingNo) { showToast('⚠️ 请输入快递单号'); document.getElementById('editTrackingNo').focus(); return; }
+            if (!courier) { showToast('⚠️ 请选择快递公司'); document.getElementById('editCourier').focus(); return; }
+            if (!date) { showToast('⚠️ 请选择登记日期'); return; }
+
+            const body = { trackingNo, courier, customerName, reason, date };
+            showLoading();
+            try {
+                await api('/api/records/' + editId, {
+                    method: 'PUT',
+                    body: JSON.stringify(body),
+                });
+                showToast('✅ 记录更新成功');
+                if (reason) addHistoryReason(reason);
+                closeModal();
+                await loadRecords();
+                renderTable();
+            } catch {} finally { hideLoading(); }
+        }
+
+        // ============ Delete ============
+        function confirmDelete(id) {
+            pendingDeleteId = id;
+            const record = records.find(r => r.id === id);
+            if (record) {
+                document.getElementById('confirmMsg').textContent = `确定要删除快递单号「${record.trackingNo}」吗？`;
+                document.getElementById('confirmSub').textContent = '此操作不可恢复';
+            }
+            document.getElementById('confirmDialog').style.display = 'flex';
+            document.getElementById('confirmDeleteBtn').onclick = executeDelete;
+        }
+
+        async function executeDelete() {
+            if (!pendingDeleteId) return;
+            showLoading();
+            try {
+                await api('/api/records/' + pendingDeleteId, { method: 'DELETE' });
+                showToast('🗑 记录已删除');
+                pendingDeleteId = null;
+                closeConfirm();
+                await loadRecords();
+                const filtered = getFilteredRecords();
+                const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+                if (currentPage > totalPages) currentPage = totalPages;
+                renderTable();
+            } catch {} finally { hideLoading(); }
+        }
+
+        function closeConfirm() {
+            document.getElementById('confirmDialog').style.display = 'none';
+            pendingDeleteId = null;
+        }
+
+        // ============ Export CSV ============
+        function exportData() {
+            const filtered = getFilteredRecords();
+            if (filtered.length === 0) { showToast('⚠️ 没有数据可导出'); return; }
+            const header = ['快递单号','快递公司','客户名称','退货原因','登记日期'];
+            const rows = filtered.map(r => [r.trackingNo, r.courier, r.customerName||'', r.reason||'', r.date]);
+            const csvContent = [header, ...rows]
+                .map(row => row.map(cell => {
+                    if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                        return '"' + cell.replace(/"/g, '""') + '"';
+                    }
+                    return cell;
+                }).join(','))
+                .join('\n');
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csvContent], { type:'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `退货记录_${currentUsername}_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showToast('📥 CSV 导出成功');
+        }
+
+        // ============ Keyboard ============
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (document.getElementById('formModal').style.display === 'flex') closeModal();
+                else if (document.getElementById('confirmDialog').style.display === 'flex') closeConfirm();
+            }
+            if (e.key === 'Enter' && document.getElementById('formModal').style.display === 'flex') {
+                const ae = document.activeElement;
+                if (ae && (ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT')) return;
+                e.preventDefault();
+                executeEditRecord();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                if (document.getElementById('appContainer').classList.contains('active')) {
+                    e.preventDefault();
+                    document.getElementById('searchInput').focus();
+                }
+            }
+        });
+
+        // 点击遮罩关闭
+        document.getElementById('formModal').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+        document.getElementById('confirmDialog').addEventListener('click', function(e) { if(e.target===this) closeConfirm(); });
+
+        // ============ Init ============
+        (async function init() {
+            try {
+                const user = await api('/api/user');
+                currentUsername = user.username;
+                await loadAndShowApp();
+            } catch {
+                showAuthPage();
+            }
+        })();
+    </script>
+</body>
+</html>
